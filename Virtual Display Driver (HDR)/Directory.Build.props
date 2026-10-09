@@ -1,0 +1,26 @@
+<Project>
+  <!--
+    Optional WDK/SDK from NuGet (see packages.config next to this file).
+
+    Nothing changes unless the packages were restored, e.g. by scripts\Build-Arm64.ps1.
+    Without them the build keeps using the WDK installed under Windows Kits, exactly like
+    the upstream CI (choco windowsdriverkit11).
+
+    VddPackagesDir can point to an existing packages folder: /p:VddPackagesDir=C:\path\packages
+  -->
+  <PropertyGroup>
+    <VddWdkNuGetVersion Condition="'$(VddWdkNuGetVersion)' == ''">10.0.26100.6584</VddWdkNuGetVersion>
+    <VddPackagesDir Condition="'$(VddPackagesDir)' == ''">$(MSBuildThisFileDirectory)packages</VddPackagesDir>
+    <!-- A /p: value is a global property and cannot be reassigned here, so normalize into a new one. -->
+    <_VddPackagesDir>$([MSBuild]::EnsureTrailingSlash('$(VddPackagesDir)'))</_VddPackagesDir>
+    <VddWdkProps>$(_VddPackagesDir)Microsoft.Windows.WDK.$(Platform).$(VddWdkNuGetVersion)\build\native\Microsoft.Windows.WDK.$(Platform).props</VddWdkProps>
+    <VddSdkArchProps>$(_VddPackagesDir)Microsoft.Windows.SDK.CPP.$(Platform).$(VddWdkNuGetVersion)\build\native\Microsoft.Windows.SDK.cpp.$(Platform).props</VddSdkArchProps>
+    <VddSdkProps>$(_VddPackagesDir)Microsoft.Windows.SDK.CPP.$(VddWdkNuGetVersion)\build\native\Microsoft.Windows.SDK.cpp.props</VddSdkProps>
+    <VddUseWdkNuGet Condition="('$(Platform)' == 'ARM64' or '$(Platform)' == 'x64') and Exists('$(VddWdkProps)') and Exists('$(VddSdkArchProps)') and Exists('$(VddSdkProps)')">true</VddUseWdkNuGet>
+  </PropertyGroup>
+  <ImportGroup Condition="'$(VddUseWdkNuGet)' == 'true'">
+    <Import Project="$(VddWdkProps)" />
+    <Import Project="$(VddSdkArchProps)" />
+    <Import Project="$(VddSdkProps)" />
+  </ImportGroup>
+</Project>
